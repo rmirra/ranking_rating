@@ -5,7 +5,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.1/css/bootstrap.min.css">
-
     <style>
         body { max-width: 2800px; margin: 0 auto; }
         .image-container {
@@ -49,186 +48,183 @@
         }
     </style>
 </head>
-
 <body>
+
 <div class="container">
-
-<div class="jumbotron mt-3">
-    <h1>Image Quality Evaluation</h1>
-    <hr>
-    <p>
-        Click <b>1</b> for the closest image and <b>2</b> for the second closest.
-        You must pick exactly two images per sample.
-    </p>
-</div>
-
-<!-- EMAIL -->
-<div class="form-group">
-    <label><strong>Email address</strong></label>
-    <input type="email" class="form-control" id="user-email" required>
-</div>
-
-<hr>
-
-<!-- PAGE 1 -->
-<h2>Page 1 (Required)</h2>
-<form id="form-page1">
-    <div id="container-page1"></div>
-    <div class="text-center">
-        <button class="btn btn-primary" type="submit">Submit Page 1</button>
+    <div class="jumbotron mt-3">
+        <h1>Image Quality Evaluation</h1>
+        <hr>
+        <p>Click <b>1</b> for the closest image and <b>2</b> for the second closest.</p>
+        <p>Please select exactly <b>one 1</b> and <b>one 2</b> per sample.</p>
     </div>
-</form>
 
-<hr style="margin:60px 0;">
+    <!-- Email -->
+    <div class="form-group">
+        <label><strong>Email (required)</strong></label>
+        <input type="email" class="form-control" id="user-email" required>
+    </div>
 
-<!-- PAGE 2 -->
-<div id="page2-block" style="display:none;">
-    <h2>Page 2 (Optional)</h2>
-    <p>If you are motivated, you may continue with Page 2.</p>
-
-    <form id="form-page2">
-        <div id="container-page2"></div>
+    <!-- PAGE 1 -->
+    <form id="form-page1">
+        <h3>Page 1 (Required)</h3>
+        <div id="container-page1"></div>
         <div class="text-center">
-            <button class="btn btn-secondary" type="submit">Submit Page 2</button>
+            <button class="btn btn-primary" type="submit">Submit Page 1</button>
         </div>
     </form>
-</div>
 
+    <hr style="margin:60px 0;">
+
+    <!-- PAGE 2 -->
+    <div id="page2-wrapper" style="display:none;">
+        <h3>Page 2 (Optional)</h3>
+        <p>If you are motivated, you may continue with Page 2.</p>
+
+        <form id="form-page2">
+            <div id="container-page2"></div>
+            <div class="text-center">
+                <button class="btn btn-secondary" type="submit">Submit Page 2</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script>
-const GOOGLE_SCRIPT_URL =
-"https://script.google.com/macros/s/AKfycbxVJAw4KzBXx5fVTjAPSLpy3S4sbMWfz2WPakNEaUVjhIEM_WvzTtleUfiK6DGBOUFq_A/exec";
-
 let CONFIG = null;
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxVJAw4KzBXx5fVTjAPSLpy3S4sbMWfz2WPakNEaUVjhIEM_WvzTtleUfiK6DGBOUFq_A/exec";
 
-function shuffle(arr) {
-    return arr.map(x => ({x, r: Math.random()}))
-              .sort((a,b)=>a.r-b.r)
-              .map(o=>o.x);
+/* ---------- utils ---------- */
+function shuffleArray(a){
+    return a.map(v=>({v, r:Math.random()}))
+            .sort((x,y)=>x.r-y.r)
+            .map(o=>o.v);
 }
 
-function makeRow(item, idx, pageTag) {
-    const row = document.createElement("div");
-    row.className = "eval-row";
+/* ---------- render ---------- */
+function renderPage(items, containerId, pageTag){
+    const container = document.getElementById(containerId);
+    container.innerHTML = "";
 
-    const wrap = document.createElement("div");
-    wrap.className = "d-flex";
+    items.forEach((item, idx)=>{
+        const row = document.createElement("div");
+        row.className = "eval-row";
 
-    // target
-    const t = document.createElement("div");
-    t.className = "image-container";
-    t.innerHTML = `<img src="data/images/${item.part}/id_${item.id}/target.png">
-                   <div class="target-label">Target</div>`;
-    wrap.appendChild(t);
+        const imgRow = document.createElement("div");
+        imgRow.className = "d-flex";
 
-    const methods = shuffle(Object.values(item.anon_map));
+        // target
+        const t = document.createElement("div");
+        t.className = "image-container";
+        t.innerHTML = `
+            <img src="data/images/${item.part}/id_${item.id}/target.png">
+            <div class="target-label">Target</div>`;
+        imgRow.appendChild(t);
 
-    methods.forEach(method=>{
-        const d = document.createElement("div");
-        d.className = "image-container";
-        d.innerHTML = `<img src="data/images/${item.part}/id_${item.id}/${method}.png">`;
+        // methods
+        shuffleArray(Object.values(item.anon_map)).forEach(method=>{
+            const d = document.createElement("div");
+            d.className = "image-container";
 
-        const radios = document.createElement("div");
-        radios.className = "score-buttons";
+            const img = document.createElement("img");
+            img.src = `data/images/${item.part}/id_${item.id}/${method}.png`;
+            d.appendChild(img);
 
-        [1,2].forEach(rank=>{
-            const label = document.createElement("label");
-            const r = document.createElement("input");
-            r.type="radio";
-            r.name=`rank_${pageTag}_${idx}_${method}`;
-            r.value=rank;
+            const radios = document.createElement("div");
+            radios.className = "score-buttons";
 
-            // toggleable
-            r.addEventListener("click",function(){
-                if(this.wasChecked){
-                    this.checked=false;
-                    this.wasChecked=false;
-                } else {
-                    this.wasChecked=true;
-                }
+            [1,2].forEach(rank=>{
+                const label = document.createElement("label");
+                const r = document.createElement("input");
+                r.type = "radio";
+                r.name = `rank_${pageTag}_${idx}_${method}`;
+                r.value = rank;
+
+                // toggleable radio
+                r.addEventListener("click", function(){
+                    if(this.wasChecked){
+                        this.checked = false;
+                        this.wasChecked = false;
+                    } else {
+                        this.wasChecked = true;
+                    }
+                });
+
+                label.appendChild(r);
+                label.append(` ${rank}`);
+                radios.appendChild(label);
             });
 
-            label.appendChild(r);
-            label.append(` ${rank}`);
-            radios.appendChild(label);
+            d.appendChild(radios);
+            imgRow.appendChild(d);
         });
 
-        d.appendChild(radios);
-        wrap.appendChild(d);
-    });
-
-    row.appendChild(wrap);
-    return row;
-}
-
-function renderPage(items, containerId, pageTag){
-    const c = document.getElementById(containerId);
-    items.forEach((item,i)=>{
-        c.appendChild(makeRow(item,i,pageTag));
-        c.appendChild(document.createElement("hr")).className="row-divider";
+        row.appendChild(imgRow);
+        container.appendChild(row);
+        container.appendChild(document.createElement("hr")).className="row-divider";
     });
 }
 
-function collect(items, pageTag){
-    const rows=[];
-    let badRow=null;
-
-    items.forEach((item,i)=>{
-        let seen=[];
-        Object.values(item.anon_map).forEach(m=>{
-            const radios=document.getElementsByName(`rank_${pageTag}_${i}_${m}`);
-            let rank=999;
-            radios.forEach(r=>{ if(r.checked) rank=parseInt(r.value); });
-            if(rank===1||rank===2) seen.push(rank);
-            rows.push({part:item.part,id:item.id,method:m,rank, page:pageTag});
-        });
-        if(seen.length!==2||!seen.includes(1)||!seen.includes(2))
-            badRow=badRow||document.getElementsByClassName("eval-row")[i];
-    });
-
-    if(badRow){
-        badRow.scrollIntoView({behavior:"smooth",block:"center"});
-        alert("Please rank top-2 for all samples on this page.");
-        throw "invalid";
+/* ---------- submit ---------- */
+function submitPage(items, pageTag, formId){
+    const email = document.getElementById("user-email").value.trim();
+    if(!email){
+        alert("Please enter your email.");
+        return;
     }
-    return rows;
-}
 
-function submit(rows){
+    const rows = [];
+    let errorRow = null;
+
+    items.forEach((item, idx)=>{
+        let found = [];
+        Object.values(item.anon_map).forEach(method=>{
+            const radios = document.getElementsByName(`rank_${pageTag}_${idx}_${method}`);
+            let rank = 999;
+            radios.forEach(r=>{ if(r.checked) rank = parseInt(r.value); });
+            if(rank===1||rank===2) found.push(rank);
+            rows.push({ part:item.part, id:item.id, method, rank, page:pageTag });
+        });
+
+        if(found.length!==2 || !found.includes(1) || !found.includes(2)){
+            errorRow = document.getElementsByClassName("eval-row")[idx];
+        }
+    });
+
+    if(errorRow){
+        errorRow.scrollIntoView({behavior:"smooth", block:"center"});
+        alert("Please rank top-2 for all samples.");
+        return;
+    }
+
     fetch(GOOGLE_SCRIPT_URL,{
         method:"POST",
         mode:"no-cors",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-            user_name:document.getElementById("user-email").value,
-            rows
-        })
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({ user_name: email, rows })
+    }).then(()=>{
+        alert(`Page ${pageTag==="p1"?"1":"2"} submitted successfully.`);
+        if(pageTag==="p1") document.getElementById("page2-wrapper").style.display="block";
+        document.getElementById(formId).reset();
     });
 }
 
+/* ---------- wiring ---------- */
+document.getElementById("form-page1").onsubmit = e=>{
+    e.preventDefault();
+    submitPage(CONFIG.items.filter((_,i)=>i%2===0),"p1","form-page1");
+};
+document.getElementById("form-page2").onsubmit = e=>{
+    e.preventDefault();
+    submitPage(CONFIG.items.filter((_,i)=>i%2===1),"p2","form-page2");
+};
+
 fetch("./data/config.json")
-.then(r=>r.json())
-.then(cfg=>{
-    CONFIG=cfg;
-    const p1=CONFIG.items.filter((_,i)=>i%2===0);
-    const p2=CONFIG.items.filter((_,i)=>i%2===1);
-    renderPage(p1,"container-page1","p1");
-    renderPage(p2,"container-page2","p2");
-
-    document.getElementById("form-page1").onsubmit=e=>{
-        e.preventDefault();
-        submit(collect(p1,"p1"));
-        document.getElementById("page2-block").style.display="block";
-        alert("Page 1 submitted. Thank you!");
-    };
-
-    document.getElementById("form-page2").onsubmit=e=>{
-        e.preventDefault();
-        submit(collect(p2,"p2"));
-        alert("Page 2 submitted. Thank you!");
-    };
-});
+    .then(r=>r.json())
+    .then(cfg=>{
+        CONFIG = cfg;
+        renderPage(CONFIG.items.filter((_,i)=>i%2===0),"container-page1","p1");
+        renderPage(CONFIG.items.filter((_,i)=>i%2===1),"container-page2","p2");
+    });
 </script>
 </body>
 </html>
