@@ -138,3 +138,97 @@ function makeRow(item, idx, pageTag) {
             r.type="radio";
             r.name=`rank_${pageTag}_${idx}_${method}`;
             r.value=rank;
+
+            // toggleable
+            r.addEventListener("click",function(){
+                if(this.wasChecked){
+                    this.checked=false;
+                    this.wasChecked=false;
+                } else {
+                    this.wasChecked=true;
+                }
+            });
+
+            label.appendChild(r);
+            label.append(` ${rank}`);
+            radios.appendChild(label);
+        });
+
+        d.appendChild(radios);
+        wrap.appendChild(d);
+    });
+
+    row.appendChild(wrap);
+    return row;
+}
+
+function renderPage(items, containerId, pageTag){
+    const c = document.getElementById(containerId);
+    items.forEach((item,i)=>{
+        c.appendChild(makeRow(item,i,pageTag));
+        c.appendChild(document.createElement("hr")).className="row-divider";
+    });
+}
+
+function collect(items, pageTag){
+    const rows=[];
+    let badRow=null;
+
+    items.forEach((item,i)=>{
+        let seen=[];
+        Object.values(item.anon_map).forEach(m=>{
+            const radios=document.getElementsByName(`rank_${pageTag}_${i}_${m}`);
+            let rank=999;
+            radios.forEach(r=>{ if(r.checked) rank=parseInt(r.value); });
+            if(rank===1||rank===2) seen.push(rank);
+            rows.push({part:item.part,id:item.id,method:m,rank, page:pageTag});
+        });
+        if(seen.length!==2||!seen.includes(1)||!seen.includes(2))
+            badRow=badRow||document.getElementsByClassName("eval-row")[i];
+    });
+
+    if(badRow){
+        badRow.scrollIntoView({behavior:"smooth",block:"center"});
+        alert("Please rank top-2 for all samples on this page.");
+        throw "invalid";
+    }
+    return rows;
+}
+
+function submit(rows){
+    fetch(GOOGLE_SCRIPT_URL,{
+        method:"POST",
+        mode:"no-cors",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            user_name:document.getElementById("user-email").value,
+            rows
+        })
+    });
+}
+
+fetch("./data/config.json")
+.then(r=>r.json())
+.then(cfg=>{
+    CONFIG=cfg;
+    const p1=CONFIG.items.filter((_,i)=>i%2===0);
+    const p2=CONFIG.items.filter((_,i)=>i%2===1);
+    renderPage(p1,"container-page1","p1");
+    renderPage(p2,"container-page2","p2");
+
+    document.getElementById("form-page1").onsubmit=e=>{
+        e.preventDefault();
+        submit(collect(p1,"p1"));
+        document.getElementById("page2-block").style.display="block";
+        alert("Page 1 submitted. Thank you!");
+    };
+
+    document.getElementById("form-page2").onsubmit=e=>{
+        e.preventDefault();
+        submit(collect(p2,"p2"));
+        alert("Page 2 submitted. Thank you!");
+    };
+});
+</script>
+</body>
+</html>
