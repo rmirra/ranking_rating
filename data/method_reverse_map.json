@@ -1,0 +1,10 @@
+{
+    "m1": "MultiBO",
+    "m2": "MultiBO-non-human_aesthetic",
+    "m3": "MultiBO-non-human_lpips-clip-ssim",
+    "m4": "DAS-aesthetic",
+    "m5": "DNO-picscore",
+    "m6": "DEMON-aesthetic",
+    "m7": "DiffDPO",
+    "m8": "IterComp"
+}
