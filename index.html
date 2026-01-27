@@ -38,6 +38,18 @@
     </div>
 
     <form id="rating-form">
+	<div class="form-group">
+    <label for="user-email"><strong>Email address</strong></label>
+    <input
+        type="email"
+        class="form-control"
+        id="user-email"
+        placeholder="name@institution.edu"
+        required
+    >
+</div>
+<hr>
+
         <div id="evaluation-container"></div>
         <div class="d-flex justify-content-center">
             <button type="submit" class="btn btn-primary" id="submit-btn">Submit Ratings</button>
@@ -165,10 +177,19 @@ document.getElementById("rating-form").addEventListener("submit", function(e){
         return;
     }
 
-    const payload = {
-        user_name: "", // optional
-        rows: results
-    };
+    const emailInput = document.getElementById("user-email");
+const userEmail = emailInput.value.trim();
+
+if (!userEmail) {
+    alert("Please enter your email.");
+    emailInput.focus();
+    return;
+}
+
+const payload = {
+    user_name: userEmail,   // stored in Sheets
+    rows: results
+};
 
     const submitBtn = document.getElementById("submit-btn");
     submitBtn.disabled = true;
