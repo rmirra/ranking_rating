@@ -52,11 +52,14 @@
 
 <div class="container">
     <div class="jumbotron mt-3">
-        <h1>Image Quality Evaluation</h1>
-        <hr>
-        <p>Click <b>1</b> for the closest image and <b>2</b> for the second closest.</p>
-        <p>Please select exactly <b>one 1</b> and <b>one 2</b> per sample.</p>
-    </div>
+    <h1>Image Quality Evaluation</h1>
+    <hr class="my-4">
+    <p>Thank you for volunteering in our experiments!</p>
+    <p>Below is a target image and several neural models (including ours) are trying to get as close as possible to the target.</p>
+    <p>Click “<b>1</b>” for the closest image and “<b>2</b>” for the second closest.</p>
+    <p>Please select exactly two methods (unique rank) per sample.</p>
+    <h2>Differences will be subtle!</h2>
+</div>
 
     <!-- Email -->
     <div class="form-group">
@@ -202,7 +205,14 @@ function submitPage(items, pageTag, formId){
         headers:{ "Content-Type":"application/json" },
         body:JSON.stringify({ user_name: email, rows })
     }).then(()=>{
-        alert(`Page ${pageTag==="p1"?"1":"2"} submitted successfully.`);
+        if (pageTag === "p1") {
+    alert(
+        "Page 1 completed successfully.\n\n" +
+        "Now, if you are motivated, please feel free to scroll down for Page 2."
+    );
+} else {
+    alert("Page 2 completed successfully. Thank you!");
+}
         if(pageTag==="p1") document.getElementById("page2-wrapper").style.display="block";
         document.getElementById(formId).reset();
     });
